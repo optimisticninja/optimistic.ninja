@@ -1,0 +1,237 @@
+---
+layout: post
+title:  "Securing Your Router With OpenWRT"
+date:   2016-12-13 20:09:10 -0700
+description: "How to use OpenWRT to harden your home router."
+tags: [howto, openwrt, networking, security, privacy, encryption]
+---
+As the start of a series of guides for securing your home network, I'm going to be talking about one of your most internet-facing devices - your router.
+
+I know what you are thinking...
+
+> "D-Link and Netgear do a great job..." - Guy who generally rates his equipment on looks
+
+> "At least they aren't IoT video cameras right?" - Smarter guy with a sad perspective
+
+IoT cameras (in fact - MANY IoT devices) are especially vulnerable because they share very similar security flaws to home routers.
+
+* Horribly secured lightweight webservers
+
+* Horribly secured code running inside of those webservers
+	* I have seen system() calls through page parameters
+	* I have seen starred passwords that can be shown with a bit of JavaScript magic
+	* I have seen all pages being locked down but one... that allows you to do the first thing in this list.
+* Default passwords EVERYWHERE (Even hardcoded passwords - yeah... sad times for hardware manufacturers)
+
+I want to make something very clear - open source software is much safer than closed, generally speaking. If your router is not supported by an open-source firmware like OpenWRT, go buy one. Otherwise you are going to be left vulnerable. People are very active in these communities and release patches quickly when major security flaws are known. Your router manufacturer will *most likely* only give you a handful of firmware updates for *their* viewed lifecycle (1-2 years-ish). That is just the sad state of things. Staying up to date is one of the most important things you can do for your security. You are making it more difficult for a hacker to exploit the software on your computer. An attacker doesn't need a(n) 0day (exploit unknown to the software developers) to attack you if your software is behind. They can use an old exploit that hasn't been patched for the version you are running. The exploit they use will almost certainly have proof of concept code pre-written at that point to. So, that widens the number of people with high enough of a skill level to attack you. A 14 year old script-kiddie can download pre-written code and target your IP.
+
+This is a consequence of rapid growth online, the deadlines to produce working code, and sometimes just general ignorance. Try not to blame anyone, people saw a new world, not implications. The implications are just now becoming readily apparent.
+
+
+#### ***PRECURSOR***
+
+>Do your best to store all of this in a KeePass(X) database and generate your passwords with KeePass(X). It does the legwork for you, you have no excuse. Different passwords are KEY to your survival online so stop trying to remember them. The copy/pastes will even be protecting you from keyloggers. Be sure to attach your keys to the database as well - yes it supports attachments. :grin:
+
+SSH Configuration.
+
+{% highlight shell %}
+(host) $ ssh root@192.168.1.1	# accept the new key
+{% endhighlight %}
+
+
+Create a 35 character root password
+{% highlight shell %}
+(router) $ passwd
+{% endhighlight %}
+
+Add unprivileged user gatekeeper also with a 35 character password
+{% highlight shell %}
+(router) $ opkg update
+(router) $ opkg install shadow-useradd
+(router) $ useradd gatekeeper
+(router) $ passwd gatekeeper
+(router) $ mkdir -p /home/gatekeeper
+(router) $ chown gatekeeper /home/gatekeeper
+(router) $ vi /etc/passwd
+{% endhighlight %}
+{% highlight shell %}
+# Change the line to look like this
+gatekeeper:x:1000:1000:gatekeeper:/home/gatekeeper:/bin/ash
+{% endhighlight %}
+
+Now we can SSH in
+{%highlight shell %}
+(host) $ ssh gatekeeper@192.168.1.1
+(router) gateway@OpenWRT:~$ exit 	# Hopefully you got here
+(host) $ ssh root@192.168.1.1
+{% endhighlight %}
+
+Set up sudo
+{%highlight shell %}
+(router) $ opkg install sudo
+(router) $ visudo
+{% endhighlight %}
+
+Uncomment the following
+{% highlight shell %}
+Defaults targetpw  # Ask for the password of the target user                 
+ALL ALL=(ALL) ALL  # WARNING: only use this together with 'Defaults targetpw'`
+{% endhighlight %}
+
+
+Generate an SSH key with a password and upload it to router.
+{% highlight shell %}
+(host) $ cd ~/Desktop
+(host) $ mkdir openwrt_keys; cd openwrt_keys
+(host) $ ssh-keygen # type openwrt_rsa for the name and give it a password
+{% endhighlight %}
+
+Upload it
+{% highlight shell %}
+(host) $ ssh root@192.168.1.1 "echo $(cat openwrt_rsa.pub) >> /etc/dropbear/authorized_keys;chmod 0600 /etc/dropbear/authorized_keys"
+{% endhighlight %}
+
+Test it
+{% highlight shell %}
+(host) $ ssh -i openwrt_rsa root@192.168.1.1 	# You should now be prompted to enter the key password.
+{% endhighlight %}
+
+Install DNSCrypt
+{% highlight shell %}
+(router) $ opkg install dnscrypt-proxy
+(router) $ vi /etc/config/dnscrypt-proxy
+{% endhighlight %}
+
+{% highlight shell %}
+config dnscrypt-proxy
+        option address "127.0.0.1"
+        option port    "5353"
+        option resolver "okturtles" # For US
+{% endhighlight %}
+
+Edit /etc/config/dhcp
+
+{% highlight shell %}
+(router) $ vi /etc/config/dhcp
+{% endhighlight %}
+{% highlight shell %}
+#   option resolvfile           '/tmp/resolv.conf.auto'
+    option noresolv             1
+    list server                 '127.0.0.1#5353'
+    list server                 '/pool.ntp.org/208.67.222.222'
+{% endhighlight %}
+
+Install LuCI
+{% highlight shell %}
+(router) $ opkg install luci
+{% endhighlight %}
+
+Tunnel web interface through SSH
+{% highlight shell %}
+(host) $ ssh -i openwrt_rsa -L127.0.0.1:8000:127.0.0.1:80 root@192.168.1.1
+{% endhighlight %}
+
+Go to your browser and navigate to http://127.0.0.1:8000, you should hit the tunneled page.
+
+Log in as root, you can't use your least privileged user yet.
+
+From here, things are much simpler. Follow the arrows :)
+
+#### ***Network->Firewall***
+
+* Enable SYN-flood protection (CHECKED)
+* Drop invalid packets (CHECKED)
+* Input - DROP
+* Output - ACCEPT
+* Forward - DROP
+
+***LAN->WAN***
+* ACCEPT
+* ACCEPT
+* ACCEPT
+* ACCEPT
+* unchecked
+* unchecked
+
+***WAN/WAN6***
+* DROP
+* DROP
+* ACCEPT
+* DROP
+* checked
+* checked
+
+Hit `Save & Apply`
+
+***Traffic Rules Tab***
+* Uncheck Allow-Ping
+* Under Allow-ICMPv6-Input
+	* Delete echo-request
+	* Delete echo-reply
+* Do the same for Allow-ICMPv6-Forward
+
+Hit `Save & Apply`
+
+#### ***Testing Your Firewall***
+
+Get your external IP and nmap it from a different network. It should show the host as down unless you use -Pn where it shows all ports are filtered.
+
+{% highlight shell %}
+$ nmap your.ip.here
+$ nmap -Pn your.ip.here
+{% endhighlight %}
+
+#### ***System->System***
+* Change your hostname
+
+#### ***System->Administration***
+* Limit dropbear to LAN
+* Change port to 2222 (or anything higher than 1000)
+* Disable password authentication and DO NOT allow root to login with password
+
+#### ***System->Network->Wireless***
+* Configure your Wifi to use the least populated band (Install Wifi Analyzer on your phone)
+* WPA2-PSK and auto for cipher. Forcing stronger slows wifi dramatically on my Android at the time of writing.
+
+#### ***Network->DHCP->DNS***
+* Assign static IPs for your main machines/phones.
+
+#### ***Network->Hostnames***
+* Assign hostnames to the new static assignments. (Choose custom and type in the address, after reboot this will work accross the network)
+
+#### ***Cleaning up***
+
+Disable LuCI when done.
+
+{% highlight shell %}
+(router) $ /etc/init.d/uhttpd disable
+(router) $ /etc/init.d/uhttpd stop
+{% endhighlight %}
+
+#### ***Easy re-entry***
+
+If you ever need to access the web interface again SSH back in, start /etc/init.d/uhttpd (as shown above) and use the defined tunnel.
+
+On your host machine for easy SSH, create the following file:
+
+{% highlight shell %}
+$ vi ~/.ssh/config
+{% endhighlight %}
+
+
+
+{% highlight shell %}
+Host router-tunnel
+	Hostname god.lan
+	Port 2222
+	User root
+	LocalForward 127.0.0.1:8000 127.0.0.1:80
+{% endhighlight %}
+
+
+{% highlight shell %}
+$ ssh router-tunnel
+{% endhighlight %}
+
+And voila! You should be able to hit your router's webpage.
+
