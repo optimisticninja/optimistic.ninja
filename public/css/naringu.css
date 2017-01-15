@@ -37,7 +37,7 @@ body {
 }
 
 html {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Ubuntu", sans-serif;
   font-size: 16px;
   line-height: 1.5;
 }
@@ -70,9 +70,9 @@ a:focus {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "PT Sans", Helvetica, Arial, sans-serif;
+  font-family: "Ubuntu", sans-serif;
   font-weight: 400;
-  color: #25BFBF;
+  color: #FF6347;
   letter-spacing: -.025rem;
 } 
 
@@ -347,7 +347,7 @@ tbody tr:nth-child(odd) th {
   width: 14rem;
   visibility: hidden;
   overflow-y: auto;
-  font-family: "PT Sans", Helvetica, Arial, sans-serif;
+  font-family: "Ubuntu", sans-serif;
   font-size: .875rem; /* 15px */
   color: rgba(255,255,255,.6);
   border: 1px solid #6DD;
@@ -532,7 +532,7 @@ a.sidebar-nav-item:focus {
 .page-title,
 .post-title,
 .post-title a {
-  color: #25BFBF;
+  color: #FFD700
 }
 .page-title,
 .post-title {
@@ -590,7 +590,7 @@ a.sidebar-nav-item:focus {
   overflow: hidden; /* clearfix */
   margin-left: -1rem;
   margin-right: -1rem;
-  font-family: "PT Sans", Helvetica, Arial, sans-serif;
+  font-family: "Ubuntu", sans-serif;
   color: #ccc;
   text-align: center;
 }
@@ -645,9 +645,8 @@ a.pagination-item:hover {
 .theme-6dd .container a,
 .theme-6dd .sidebar-toggle,
 .theme-6dd .related-posts li a:hover {
-  color: #6DD;
+  color: #FF6347;
 }
-
 
 /*
  * Reverse layout
