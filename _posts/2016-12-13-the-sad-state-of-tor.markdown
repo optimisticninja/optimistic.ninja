@@ -3,7 +3,7 @@ layout: post
 title:  "The Sad State Of Tor"
 date:   2016-12-13 20:09:10 -0700
 description: "Adversarial journalism is dead"
-tags: [tor, jourrnalism, privacy]
+tags: [tor, journalism, privacy]
 ---
 There is a very quiet [struggle](https://www.i2coalition.com/rule-41-expands-government-hacking-authority/) going on in the online world. A tool that came from the military/government is now being used against people all over the world as a "marker of wrongdoing". It is even being used as a weapon against the people who use it. VPN services are also under such scrutiny...
 
