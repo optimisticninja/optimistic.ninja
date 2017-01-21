@@ -14,7 +14,7 @@ permalink:           pretty
 title:               optimistic.ninja
 tagline:             'Learn how to puter.'
 description:         'the site'
-url:                 http://optimistic.ninja
+url:                 https://optimistic.ninja
 baseurl:             /
 paginate:            7
 
