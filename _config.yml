@@ -37,3 +37,4 @@ theme:
   link:             https://github.com/ariestiyansyah/naringu
 
 exclude: [ scripts, site.tar ]
+comments: true
