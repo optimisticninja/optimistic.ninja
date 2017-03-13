@@ -13,7 +13,7 @@ permalink:           pretty
 # Setup
 title:               optimistic.ninja
 tagline:             'Learn how to puter.'
-description:         'the site'
+description:         'Tech ramblings.'
 url:                 https://optimistic.ninja
 baseurl:             /
 paginate:            7
@@ -38,3 +38,4 @@ theme:
 
 exclude: [ scripts, site.tar ]
 comments: true
+disqus: optimisticninja
